@@ -1,0 +1,2177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>玄机图库</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #e8e8e8;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    .top-nav {
+      width: 100%;
+      background: #1a1a1a;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 20px;
+      gap: 20px;
+    }
+
+    .top-nav .logo {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #d4af37;
+      white-space: nowrap;
+    }
+
+    .nav-btn {
+      flex: 1;
+      max-width: 220px;
+      padding: 16px 24px;
+      background: transparent;
+      border: none;
+      color: #888;
+      font-size: 1rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: #2a2a2a;
+      color: #e8e8e8;
+    }
+
+    .nav-btn.active {
+      background: #d4af37;
+      color: #0a0a0a;
+    }
+
+    .container {
+      display: flex;
+      min-height: calc(100vh - 56px);
+    }
+
+    .main-area {
+      flex: 1;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .upload-area {
+      width: 100%;
+      max-width: 550px;
+      text-align: center;
+      padding: 60px 30px;
+      border: 2px dashed rgba(212, 175, 55, 0.4);
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .upload-area:hover {
+      background: rgba(212, 175, 55, 0.05);
+      border-color: #d4af37;
+    }
+
+    .upload-icon {
+      font-size: 5rem;
+      margin-bottom: 20px;
+    }
+
+    .upload-text {
+      font-size: 1.3rem;
+      margin-bottom: 12px;
+      color: #e8e8e8;
+    }
+
+    .upload-hint {
+      color: #888;
+      margin-bottom: 25px;
+      font-size: 1rem;
+    }
+
+    .upload-btn {
+      background: #d4af37;
+      color: #0a0a0a;
+      border: none;
+      padding: 15px 50px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .upload-btn:hover {
+      background: #f4d03f;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .preview-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 30px;
+      width: 100%;
+      position: relative;
+      user-select: none;
+    }
+
+    .preview-item {
+      position: relative;
+      background: #161616;
+      border: 2px solid rgba(212, 175, 55, 0.2);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .preview-item img {
+      width: 200px;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preview-item .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(200, 60, 60, 0.95);
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .sidebar {
+      width: 400px;
+      background: #121212;
+      border-left: 1px solid rgba(212, 175, 55, 0.2);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .settings-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 25px;
+    }
+
+    .sidebar-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      background: #1a1a1a;
+    }
+
+    .sidebar-btn {
+      flex: 1 1 33.333%;
+      min-width: 100px;
+      padding: 15px 10px;
+      text-align: center;
+      cursor: pointer;
+      border: none;
+      background: #2a2a2a;
+      color: #aaa;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .sidebar-btn.active {
+      background: #d4af37;
+      color: #0a0a0a;
+    }
+
+    .sidebar-btn:hover:not(.active) {
+      background: #333;
+      color: #e8e8e8;
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .setting-group {
+      margin-bottom: 12px;
+    }
+
+    .setting-label {
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      display: block;
+      color: #ccc;
+    }
+
+    .setting-row {
+      display: flex;
+      gap: 6px;
+      align-items: flex-end;
+    }
+
+    .setting-input {
+      width: 100%;
+      background: #1a1a1a;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      color: #e8e8e8;
+      padding: 10px 14px;
+      font-size: 1rem;
+      font-family: inherit;
+      border-radius: 5px;
+    }
+
+    .setting-input:focus {
+      outline: none;
+      border-color: #d4af37;
+    }
+
+    .setting-select {
+      background: #1a1a1a;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      color: #e8e8e8;
+      padding: 10px 14px;
+      font-size: 1rem;
+      font-family: inherit;
+      border-radius: 5px;
+      width: 100%;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10l-5 5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    .setting-select:focus {
+      outline: none;
+      border-color: #d4af37;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M6 8L1 3h10l-5 5z'/%3E%3C/svg%3E");
+    }
+
+    /* Custom Select Component */
+    .custom-select {
+      position: relative;
+      width: 100%;
+    }
+
+    .custom-select-trigger {
+      background: #1a1a1a;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      color: #e8e8e8;
+      padding: 10px 14px;
+      font-size: 1rem;
+      font-family: inherit;
+      border-radius: 5px;
+      width: 100%;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+
+    .custom-select-trigger:hover {
+      border-color: rgba(212, 175, 55, 0.4);
+    }
+
+    .custom-select-trigger.active {
+      border-color: #d4af37;
+    }
+
+    .custom-select-arrow {
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid #888;
+      transition: transform 0.2s ease;
+    }
+
+    .custom-select-trigger.active .custom-select-arrow {
+      border-top-color: #d4af37;
+      transform: rotate(180deg);
+    }
+
+    .custom-select-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 4px;
+      background: #1a1a1a;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 5px;
+      z-index: 1000;
+      display: none;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .custom-select-dropdown.open {
+      display: block;
+    }
+
+    .custom-select-option {
+      padding: 10px 14px;
+      cursor: pointer;
+      color: #e8e8e8;
+      transition: all 0.15s ease;
+    }
+
+    .custom-select-option:hover {
+      background: rgba(212, 175, 55, 0.1);
+    }
+
+    .custom-select-option.selected {
+      background: rgba(212, 175, 55, 0.2);
+      color: #d4af37;
+    }
+
+    /* Custom Scrollbar for dropdown */
+    .custom-select-dropdown::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .custom-select-dropdown::-webkit-scrollbar-track {
+      background: #1a1a1a;
+      border-radius: 4px;
+    }
+
+    .custom-select-dropdown::-webkit-scrollbar-thumb {
+      background: rgba(212, 175, 55, 0.5);
+      border-radius: 4px;
+    }
+
+    .custom-select-dropdown::-webkit-scrollbar-thumb:hover {
+      background: rgba(212, 175, 55, 0.8);
+    }
+
+    /* Preset Cards */
+    .preset-hint {
+      color: rgba(212, 175, 55, 0.7);
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .preset-cards {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .preset-card {
+      flex: 1;
+      min-width: 80px;
+      background: #1a1a1a;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 8px;
+      padding: 12px 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preset-card:hover {
+      border-color: rgba(212, 175, 55, 0.6);
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .preset-icon {
+      font-size: 24px;
+    }
+
+    .preset-title {
+      color: #e8e8e8;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .preset-desc {
+      color: #888;
+      font-size: 11px;
+    }
+
+    .preset-cards-inline {
+      display: flex;
+      gap: 8px;
+    }
+
+    .preset-card-small {
+      flex: 1;
+      background: #1a1a1a;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 6px;
+      padding: 8px 10px;
+      cursor: pointer;
+      color: #e8e8e8;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .preset-card-small:hover {
+      border-color: rgba(212, 175, 55, 0.6);
+      color: #d4af37;
+    }
+
+    .preset-card-small.active {
+      border-color: #d4af37;
+      background: rgba(212, 175, 55, 0.1);
+      color: #d4af37;
+    }
+
+    .setting-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    .setting-checkbox input {
+      width: 18px;
+      height: 18px;
+      accent-color: #d4af37;
+    }
+
+    .color-input {
+      width: 100%;
+      height: 44px;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 5px;
+      background: #1a1a1a;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .action-buttons {
+      padding: 20px;
+      background: #1a1a1a;
+      border-top: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .action-btn {
+      width: 100%;
+      padding: 16px;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .action-btn.primary {
+      background: #d4af37;
+      color: #0a0a0a;
+    }
+
+    .action-btn.primary:hover {
+      background: #f4d03f;
+    }
+
+    .action-btn.secondary {
+      background: #2a2a2a;
+      color: #e8e8e8;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .action-btn.secondary:hover {
+      background: #333;
+    }
+
+    .action-btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .action-btn-group .action-btn {
+      flex: 1;
+    }
+
+    .small-links {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px 20px 25px;
+      background: #1a1a1a;
+    }
+
+    .small-link {
+      background: none;
+      border: none;
+      color: #888;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+
+    .small-link:hover {
+      color: #e8e8e8;
+    }
+
+    /* Apply button for feedback */
+    .apply-btn {
+      background: linear-gradient(135deg, #d4af37, #c99a2c);
+      color: #0a0a0a;
+      margin-top: 15px;
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    }
+
+    .apply-btn:hover {
+      background: linear-gradient(135deg, #f4d03f, #d4af37);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+      transform: translateY(-1px);
+    }
+
+    /* Live preview indicator */
+    .live-preview-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: rgba(212, 175, 55, 0.8);
+      font-size: 0.85rem;
+      margin-top: 12px;
+    }
+
+    .live-preview-dot {
+      width: 8px;
+      height: 8px;
+      background: #d4af37;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.1); }
+    }
+
+    /* Dual Size Status Board */
+    .preview-item {
+      position: relative;
+      background: #161616;
+      border: 2px solid rgba(212, 175, 55, 0.2);
+      border-radius: 8px;
+      overflow: visible;
+      padding-bottom: 50px;
+    }
+
+    .preview-image-container {
+      position: relative;
+      overflow: hidden;
+      border-radius: 6px 6px 0 0;
+    }
+
+    .preview-watermark {
+      position: absolute;
+      font-family: 'Noto Sans SC', sans-serif;
+      color: rgba(212, 175, 55, 0.3);
+      pointer-events: none;
+      z-index: 10;
+      white-space: nowrap;
+    }
+
+    .status-board {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 10, 10, 0.95);
+      padding: 10px 12px;
+      border-top: 1px solid rgba(212, 175, 55, 0.15);
+      border-radius: 0 0 6px 6px;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .status-line.original {
+      color: #888;
+    }
+
+    .status-line.target {
+      color: rgba(212, 175, 55, 0.8);
+      margin-top: 2px;
+    }
+
+    .status-icon {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    /* Selected state */
+    .preview-item {
+      position: relative;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 2px solid transparent; /* 默认透明边框 */
+      opacity: 1; /* 默认不透明 */
+    }
+
+    .preview-item.selected {
+      border-color: #D4A33B !important;
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+      opacity: 1 !important; /* 确保选中状态不透明 */
+    }
+
+    /* 当有选中项时，未选中项半透明 */
+    .preview-grid-has-selection .preview-item:not(.selected) {
+      opacity: 0.5;
+    }
+
+    .preview-item:hover {
+      border-color: rgba(212, 175, 55, 0.5);
+    }
+
+    /* Drag selection box */
+    .drag-select-box {
+      position: fixed;
+      border: 2px dashed #D4A33B;
+      background: rgba(212, 175, 55, 0.15);
+      pointer-events: none;
+      z-index: 99999;
+      box-sizing: border-box;
+    }
+
+    /* Mode indicator */
+    .mode-indicator {
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mode-indicator-icon {
+      font-size: 18px;
+    }
+
+    .mode-indicator-text {
+      font-size: 13px;
+      color: #e8e8e8;
+    }
+
+    .mode-indicator-subtext {
+      font-size: 11px;
+      color: #888;
+    }
+
+    /* Crop box */
+    .crop-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+    }
+
+    .crop-box {
+      position: absolute;
+      border: 2px dashed #d4af37;
+      background: rgba(212, 175, 55, 0.05);
+      cursor: move;
+      pointer-events: all;
+    }
+
+    .crop-handle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: #d4af37;
+      border: 2px solid #0a0a0a;
+      border-radius: 2px;
+    }
+
+    .crop-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+    .crop-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+    .crop-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+    .crop-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+
+    .crop-handle.n { top: -6px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+    .crop-handle.s { bottom: -6px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+    .crop-handle.w { top: 50%; left: -6px; transform: translateY(-50%); cursor: w-resize; }
+    .crop-handle.e { top: 50%; right: -6px; transform: translateY(-50%); cursor: e-resize; }
+  </style>
+</head>
+<body>
+  <div class="top-nav">
+    <div class="logo">玄机图库</div>
+    <button class="nav-btn active" data-panel="resize">调整尺寸 / 裁剪</button>
+    <button class="nav-btn" data-panel="watermark">水印</button>
+    <button class="nav-btn" data-panel="border">边框</button>
+    <button class="nav-btn" data-panel="format">图片格式与质量</button>
+    <button class="nav-btn" data-panel="rename">重命名</button>
+  </div>
+  
+  <div class="container">
+    <div class="main-area">
+      
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">📁</div>
+        <div class="upload-text">将图片拖放到这里</div>
+        <div class="upload-hint">- 或者 -</div>
+        <button class="upload-btn" id="uploadBtn">从电脑浏览</button>
+      </div>
+      
+      <input type="file" id="fileInput" multiple accept="image/*">
+      
+      <div class="preview-grid" id="previewGrid"></div>
+    </div>
+
+    <div class="sidebar">
+      <div class="settings-area">
+        <!-- Mode indicator -->
+        <div class="mode-indicator" id="modeIndicator">
+          <span class="mode-indicator-icon">🌐</span>
+          <div>
+            <div class="mode-indicator-text">全局模式</div>
+            <div class="mode-indicator-subtext">设置将应用于所有图片</div>
+          </div>
+        </div>
+        
+        <div class="panel active" id="resize">
+          <div class="setting-group">
+            <div class="setting-row">
+              <div style="flex: 0 0 160px;">
+                <label class="setting-label">宽度</label>
+                <input type="number" class="setting-input" id="widthInput" value="1200" min="1">
+              </div>
+              <label class="setting-checkbox" style="margin-left: 10px;">
+                <input type="checkbox" id="autoWidth">
+                自动
+              </label>
+            </div>
+          </div>
+          <div class="setting-group">
+            <div class="setting-row">
+              <div style="flex: 0 0 160px;">
+                <label class="setting-label">高度</label>
+                <input type="number" class="setting-input" id="heightInput" value="800" min="1" disabled>
+              </div>
+              <label class="setting-checkbox" style="margin-left: 10px;">
+                <input type="checkbox" id="autoHeight" checked>
+                自动
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">输出比例</label>
+            <div class="custom-select" data-id="ratioSelect">
+              <div class="custom-select-trigger">
+                <span class="custom-select-value">自定义</span>
+                <div class="custom-select-arrow"></div>
+              </div>
+              <div class="custom-select-dropdown">
+                <div class="custom-select-option selected" data-value="custom">自定义</div>
+                <div class="custom-select-option" data-value="1:1">1:1</div>
+                <div class="custom-select-option" data-value="4:3">4:3</div>
+                <div class="custom-select-option" data-value="3:4">3:4</div>
+                <div class="custom-select-option" data-value="16:9">16:9</div>
+                <div class="custom-select-option" data-value="9:16">9:16</div>
+                <div class="custom-select-option" data-value="21:9">21:9</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">旋转</label>
+            <div class="custom-select" data-id="rotationSelect">
+              <div class="custom-select-trigger">
+                <span class="custom-select-value">不旋转</span>
+                <div class="custom-select-arrow"></div>
+              </div>
+              <div class="custom-select-dropdown">
+                <div class="custom-select-option selected" data-value="0">不旋转</div>
+                <div class="custom-select-option" data-value="90">顺时针 90°</div>
+                <div class="custom-select-option" data-value="180">180°</div>
+                <div class="custom-select-option" data-value="270">逆时针 90°</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-checkbox">
+              <input type="checkbox" id="flipHorizontal">
+              水平翻转
+            </label>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-checkbox">
+              <input type="checkbox" id="flipVertical">
+              垂直翻转
+            </label>
+          </div>
+        </div>
+
+        <div class="panel" id="watermark">
+          <div class="setting-group">
+            <label class="setting-label">水印文字</label>
+            <input type="text" class="setting-input" id="watermarkText" placeholder="输入水印文字">
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">字体大小</label>
+            <input type="number" class="setting-input" id="watermarkSize" value="48" min="8">
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">透明度</label>
+            <input type="number" class="setting-input" id="watermarkOpacity" value="30" min="1" max="100">
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">位置</label>
+            <div class="custom-select" data-id="watermarkPosition">
+              <div class="custom-select-trigger">
+                <span class="custom-select-value">居中</span>
+                <div class="custom-select-arrow"></div>
+              </div>
+              <div class="custom-select-dropdown">
+                <div class="custom-select-option selected" data-value="center">居中</div>
+                <div class="custom-select-option" data-value="top-left">左上</div>
+                <div class="custom-select-option" data-value="top-right">右上</div>
+                <div class="custom-select-option" data-value="bottom-left">左下</div>
+                <div class="custom-select-option" data-value="bottom-right">右下</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="border">
+          <div class="setting-group">
+            <label class="setting-checkbox">
+              <input type="checkbox" id="borderEnabled">
+              添加边框
+            </label>
+          </div>
+
+          <div class="setting-group" id="borderOptions" style="display: none;">
+            <div class="setting-row">
+              <div style="flex: 1;">
+                <label class="setting-label">颜色</label>
+                <input type="color" class="color-input" id="borderColor" value="#d4af37">
+              </div>
+              <div style="flex: 1;">
+                <label class="setting-label">厚度</label>
+                <input type="number" class="setting-input" id="borderWidth" value="20" min="1">
+              </div>
+            </div>
+            <div class="setting-row" style="margin-top: 12px;">
+              <div style="flex: 1;">
+                <label class="setting-label">内留白</label>
+                <input type="number" class="setting-input" id="borderPadding" value="0" min="0">
+              </div>
+              <div style="flex: 1;">
+                <label class="setting-label">圆角</label>
+                <input type="number" class="setting-input" id="borderRadius" value="0" min="0">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="format">
+          <div class="setting-group">
+            <label class="setting-label">图片格式</label>
+            <div class="custom-select" data-id="formatSelect">
+              <div class="custom-select-trigger">
+                <span class="custom-select-value">JPEG</span>
+                <div class="custom-select-arrow"></div>
+              </div>
+              <div class="custom-select-dropdown">
+                <div class="custom-select-option selected" data-value="jpeg">JPEG</div>
+                <div class="custom-select-option" data-value="png">PNG</div>
+                <div class="custom-select-option" data-value="webp">WebP</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">质量</label>
+            <input type="number" class="setting-input" id="qualityInput" value="90" min="1" max="100">
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-checkbox">
+              <input type="checkbox" id="highQuality">
+              高质量缩放（较慢）
+            </label>
+          </div>
+        </div>
+
+        <div class="panel" id="rename">
+          <div class="setting-group">
+            <label class="setting-label">文件前缀</label>
+            <input type="text" class="setting-input" id="filePrefix" placeholder="例如: image_">
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">起始编号</label>
+            <input type="number" class="setting-input" id="startNumber" value="1" min="1">
+          </div>
+        </div>
+
+        <!-- Live preview indicator -->
+        <div class="live-preview-indicator" id="previewIndicator" style="display: none;">
+          <div class="live-preview-dot"></div>
+          <span>实时预览中</span>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <div class="action-btn-group">
+          <button class="action-btn primary" id="downloadZip">下载 ZIP</button>
+          <button class="action-btn secondary" id="downloadFiles">下载文件</button>
+        </div>
+        <button class="action-btn secondary" id="saveToFolder">保存到文件夹</button>
+      </div>
+
+      <div class="small-links">
+        <button class="small-link" id="clearAll">清除全部</button>
+        <button class="small-link" id="resetSettings">重置设置</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== polyfill for roundRect ====================
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+        this.moveTo(x + r, y);
+        this.lineTo(x + w - r, y);
+        this.quadraticCurveTo(x + w, y, x + w, y + r);
+        this.lineTo(x + w, y + h - r);
+        this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        this.lineTo(x + r, y + h);
+        this.quadraticCurveTo(x, y + h, x, y + h - r);
+        this.lineTo(x, y + r);
+        this.quadraticCurveTo(x, y, x + r, y);
+        return this;
+      };
+    }
+
+    let images = [];
+    let selectedImageIds = new Set();
+    let lastSelectedId = null;
+    // 拖拽框选变量
+    let dragActive = false;
+    let isActualDrag = false; // 标记是否是真正的拖拽（不是点击）
+    let dragX = 0, dragY = 0;
+    let dragSelection = null;
+    
+    // Global settings (used when no image selected)
+    const globalSettings = {
+      width: 1200,
+      height: 800,
+      autoWidth: false,
+      autoHeight: true,
+      ratioSelect: 'custom',
+      rotationSelect: '0',
+      flipHorizontal: false,
+      flipVertical: false,
+      borderEnabled: false,
+      borderWidth: 20,
+      borderColor: '#d4af37',
+      borderPadding: 0,
+      borderRadius: 0,
+      formatSelect: 'jpeg',
+      qualityInput: 90,
+      highQuality: false,
+      watermarkText: '',
+      watermarkSize: 48,
+      watermarkOpacity: 30,
+      watermarkPosition: 'center'
+    };
+    
+    const ratioPresets = {
+      '1:1': 1,
+      '4:3': 4/3,
+      '3:4': 3/4,
+      '16:9': 16/9,
+      '9:16': 9/16,
+      '21:9': 21/9
+    };
+
+    // Custom Select Component
+    const customSelects = document.querySelectorAll('.custom-select');
+    const selectValues = {
+      ratioSelect: 'custom',
+      rotationSelect: '0',
+      watermarkPosition: 'center',
+      formatSelect: 'jpeg'
+    };
+
+    customSelects.forEach(select => {
+      const trigger = select.querySelector('.custom-select-trigger');
+      const dropdown = select.querySelector('.custom-select-dropdown');
+      const options = select.querySelectorAll('.custom-select-option');
+      const valueSpan = select.querySelector('.custom-select-value');
+      const id = select.dataset.id;
+
+      // Open/close dropdown
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = dropdown.classList.contains('open');
+        customSelects.forEach(s => {
+          s.querySelector('.custom-select-dropdown').classList.remove('open');
+          s.querySelector('.custom-select-trigger').classList.remove('active');
+        });
+        if (!isOpen) {
+          dropdown.classList.add('open');
+          trigger.classList.add('active');
+        }
+      });
+
+      // Select option
+      options.forEach(option => {
+        option.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const value = option.dataset.value;
+          const text = option.textContent;
+          
+          valueSpan.textContent = text;
+          selectValues[id] = value;
+          
+          options.forEach(o => o.classList.remove('selected'));
+          option.classList.add('selected');
+          
+          dropdown.classList.remove('open');
+          trigger.classList.remove('active');
+
+          // Trigger custom event for specific selects
+          if (id === 'ratioSelect') {
+            handleRatioChange(value);
+          } else {
+            updateCurrentSetting(id, value);
+          }
+        });
+      });
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', () => {
+      customSelects.forEach(select => {
+        select.querySelector('.custom-select-dropdown').classList.remove('open');
+        select.querySelector('.custom-select-trigger').classList.remove('active');
+      });
+    });
+
+    // Panel switching
+    const navBtns = document.querySelectorAll('.nav-btn');
+    const panels = document.querySelectorAll('.panel');
+
+    navBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetPanel = btn.dataset.panel;
+        
+        navBtns.forEach(b => b.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        
+        btn.classList.add('active');
+        document.getElementById(targetPanel).classList.add('active');
+      });
+    });
+
+    // Elements
+    const uploadArea = document.getElementById('uploadArea');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('fileInput');
+    const previewGrid = document.getElementById('previewGrid');
+    const widthInput = document.getElementById('widthInput');
+    const heightInput = document.getElementById('heightInput');
+    const autoWidth = document.getElementById('autoWidth');
+    const autoHeight = document.getElementById('autoHeight');
+    const flipHorizontal = document.getElementById('flipHorizontal');
+    const flipVertical = document.getElementById('flipVertical');
+    const borderEnabled = document.getElementById('borderEnabled');
+    const borderOptions = document.getElementById('borderOptions');
+    const borderWidth = document.getElementById('borderWidth');
+    const borderColor = document.getElementById('borderColor');
+    const borderPadding = document.getElementById('borderPadding');
+    const borderRadius = document.getElementById('borderRadius');
+    const borderPresets = document.getElementById('borderPresets');
+    const presetsInline = document.getElementById('presetsInline');
+    const qualityInput = document.getElementById('qualityInput');
+    const highQuality = document.getElementById('highQuality');
+    const filePrefix = document.getElementById('filePrefix');
+    const startNumber = document.getElementById('startNumber');
+    const downloadZip = document.getElementById('downloadZip');
+    const downloadFiles = document.getElementById('downloadFiles');
+    const clearAll = document.getElementById('clearAll');
+    const resetSettings = document.getElementById('resetSettings');
+    const previewIndicator = document.getElementById('previewIndicator');
+    const modeIndicator = document.getElementById('modeIndicator');
+    
+    // Helper: Get current settings (global or selected images)
+    function getCurrentSettings() {
+      if (selectedImageIds.size > 0) {
+        const img = images.find(i => selectedImageIds.has(String(i.id)));
+        return img ? img.settings : globalSettings;
+      }
+      return globalSettings;
+    }
+    
+    // Helper: Get settings for a specific image
+    function getSettingsForImage(imgData) {
+      return imgData.settings || globalSettings;
+    }
+    
+    // Helper: Update mode indicator
+    function updateModeIndicator() {
+      if (selectedImageIds.size > 0) {
+        const count = selectedImageIds.size;
+        previewGrid.classList.add('preview-grid-has-selection');
+        modeIndicator.innerHTML = `
+          <span class="mode-indicator-icon">🖼️</span>
+          <div>
+            <div class="mode-indicator-text">批量模式 - ${count}张图片</div>
+            <div class="mode-indicator-subtext">设置仅应用于选中图片（点击空白处退出）</div>
+          </div>
+        `;
+      } else {
+        previewGrid.classList.remove('preview-grid-has-selection');
+        modeIndicator.innerHTML = `
+          <span class="mode-indicator-icon">🌐</span>
+          <div>
+            <div class="mode-indicator-text">全局模式</div>
+            <div class="mode-indicator-subtext">设置将应用于所有图片</div>
+          </div>
+        `;
+      }
+    }
+    
+    // Helper: Sync UI with current settings
+    function syncUIWithSettings() {
+      const settings = getCurrentSettings();
+      
+      widthInput.value = settings.width;
+      heightInput.value = settings.height;
+      autoWidth.checked = settings.autoWidth;
+      autoHeight.checked = settings.autoHeight;
+      widthInput.disabled = settings.autoWidth;
+      heightInput.disabled = settings.autoHeight;
+      
+      if (!selectedImageIds.size || selectedImageIds.size === 1) {
+        flipHorizontal.checked = settings.flipHorizontal;
+        flipVertical.checked = settings.flipVertical;
+      } else {
+        // 选中多张图片时，检查是否所有图片的翻转状态一致
+        const selectedImages = images.filter(img => selectedImageIds.has(String(img.id)));
+        const allFlipH = selectedImages.every(img => img.settings.flipHorizontal);
+        const allFlipV = selectedImages.every(img => img.settings.flipVertical);
+        flipHorizontal.checked = allFlipH;
+        flipVertical.checked = allFlipV;
+      }
+      
+      borderEnabled.checked = settings.borderEnabled;
+      borderWidth.value = settings.borderWidth;
+      borderColor.value = settings.borderColor;
+      borderPadding.value = settings.borderPadding;
+      borderRadius.value = settings.borderRadius;
+      qualityInput.value = settings.qualityInput;
+      highQuality.checked = settings.highQuality;
+      
+      if (borderEnabled.checked) {
+        borderOptions.style.display = 'block';
+      } else {
+        borderOptions.style.display = 'none';
+      }
+      
+      updateCustomSelect('ratioSelect', settings.ratioSelect);
+      updateCustomSelect('rotationSelect', settings.rotationSelect);
+      updateCustomSelect('watermarkPosition', settings.watermarkPosition);
+      updateCustomSelect('formatSelect', settings.formatSelect);
+      
+      document.getElementById('watermarkText').value = settings.watermarkText;
+      document.getElementById('watermarkSize').value = settings.watermarkSize;
+      document.getElementById('watermarkOpacity').value = settings.watermarkOpacity;
+    }
+    
+    function updateCustomSelect(id, value) {
+      const select = document.querySelector(`.custom-select[data-id="${id}"]`);
+      if (!select) return;
+      
+      const options = select.querySelectorAll('.custom-select-option');
+      const valueSpan = select.querySelector('.custom-select-value');
+      
+      options.forEach(opt => {
+        if (opt.dataset.value === value) {
+          opt.classList.add('selected');
+          valueSpan.textContent = opt.textContent;
+        } else {
+          opt.classList.remove('selected');
+        }
+      });
+      
+      selectValues[id] = value;
+    }
+    
+    // Create default settings for new image
+    function createDefaultSettings(originalWidth, originalHeight) {
+      const settings = JSON.parse(JSON.stringify(globalSettings));
+      
+      // Calculate initial height based on auto
+      if (settings.autoHeight) {
+        const ratio = originalWidth / originalHeight;
+        settings.height = Math.round(settings.width / ratio);
+      }
+      
+      return settings;
+    }
+
+    // Border Presets
+
+
+    // Update current settings (global or selected images)
+    function updateCurrentSetting(key, value) {
+      if (selectedImageIds.size > 0) {
+        // 应用到所有选中的图片
+        images.forEach(img => {
+          if (selectedImageIds.has(String(img.id))) {
+            img.settings[key] = value;
+          }
+        });
+      } else {
+        // 应用到全局设置
+        globalSettings[key] = value;
+      }
+      
+      // Also sync to selectValues for custom selects
+      if (['ratioSelect', 'rotationSelect', 'watermarkPosition', 'formatSelect'].includes(key)) {
+        selectValues[key] = value;
+      }
+      
+      updateAllTargetSizes();
+      updatePreviewFlips();
+      
+      // 边框参数改变时更新预览
+      if (['borderEnabled', 'borderColor', 'borderWidth', 'borderPadding', 'borderRadius', 'borderShadow'].includes(key)) {
+        updateBorderPreview();
+      }
+      
+      // 水印参数改变时更新预览
+      if (['watermarkText', 'watermarkSize', 'watermarkOpacity', 'watermarkPosition'].includes(key)) {
+        updateWatermarkPreview();
+      }
+      
+      showPreviewIndicator();
+    }
+
+    // Ratio selection handler
+    function handleRatioChange(selectedRatio) {
+      updateCurrentSetting('ratioSelect', selectedRatio);
+      
+      if (selectedRatio === 'custom') {
+        autoWidth.disabled = false;
+        autoHeight.disabled = false;
+        updateCurrentSetting('autoWidth', autoWidth.checked);
+        updateCurrentSetting('autoHeight', autoHeight.checked);
+      } else {
+        const ratio = ratioPresets[selectedRatio];
+        updateCurrentSetting('autoWidth', false);
+        updateCurrentSetting('autoHeight', true);
+        autoWidth.checked = false;
+        autoHeight.checked = true;
+        widthInput.disabled = false;
+        heightInput.disabled = true;
+        const currentWidth = parseInt(widthInput.value);
+        const newHeight = Math.round(currentWidth / ratio);
+        heightInput.value = newHeight;
+        updateCurrentSetting('height', newHeight);
+      }
+    }
+
+    // Auto height/width calculation with real-time updates
+    function updateAutoCalculation() {
+      if (images.length === 0) return;
+      
+      let originalWidth, originalHeight;
+      const settings = getCurrentSettings();
+      
+      // 使用第一张图片的比例来计算
+      if (images.length > 0) {
+        originalWidth = images[0].width;
+        originalHeight = images[0].height;
+      } else {
+        return;
+      }
+      
+      const ratio = originalWidth / originalHeight;
+      
+      if (settings.ratioSelect !== 'custom') {
+        const presetRatio = ratioPresets[settings.ratioSelect];
+        if (settings.autoHeight && !settings.autoWidth) {
+          const newHeight = Math.round(parseInt(widthInput.value) / presetRatio);
+          heightInput.value = newHeight;
+          updateCurrentSetting('height', newHeight);
+        } else if (settings.autoWidth && !settings.autoHeight) {
+          const newWidth = Math.round(parseInt(heightInput.value) * presetRatio);
+          widthInput.value = newWidth;
+          updateCurrentSetting('width', newWidth);
+        }
+      } else {
+        if (settings.autoHeight && !settings.autoWidth) {
+          const newHeight = Math.round(parseInt(widthInput.value) / ratio);
+          heightInput.value = newHeight;
+          updateCurrentSetting('height', newHeight);
+        } else if (settings.autoWidth && !settings.autoHeight) {
+          const newWidth = Math.round(parseInt(heightInput.value) * ratio);
+          widthInput.value = newWidth;
+          updateCurrentSetting('width', newWidth);
+        }
+      }
+    }
+
+    widthInput.addEventListener('input', () => {
+      const val = parseInt(widthInput.value) || 1;
+      updateCurrentSetting('width', val);
+      
+      const settings = getCurrentSettings();
+      if (settings.autoHeight) {
+        updateAutoCalculation();
+      } else if (settings.ratioSelect !== 'custom') {
+        const ratio = ratioPresets[settings.ratioSelect];
+        const newHeight = Math.round(val / ratio);
+        heightInput.value = newHeight;
+        updateCurrentSetting('height', newHeight);
+      }
+    });
+
+    heightInput.addEventListener('input', () => {
+      const val = parseInt(heightInput.value) || 1;
+      updateCurrentSetting('height', val);
+      
+      const settings = getCurrentSettings();
+      if (settings.autoWidth) {
+        updateAutoCalculation();
+      } else if (settings.ratioSelect !== 'custom') {
+        const ratio = ratioPresets[settings.ratioSelect];
+        const newWidth = Math.round(val * ratio);
+        widthInput.value = newWidth;
+        updateCurrentSetting('width', newWidth);
+      }
+    });
+
+    autoWidth.addEventListener('change', () => {
+      widthInput.disabled = autoWidth.checked;
+      updateCurrentSetting('autoWidth', autoWidth.checked);
+      if (autoWidth.checked) {
+        updateAutoCalculation();
+      }
+    });
+
+    autoHeight.addEventListener('change', () => {
+      heightInput.disabled = autoHeight.checked;
+      updateCurrentSetting('autoHeight', autoHeight.checked);
+      if (autoHeight.checked) {
+        updateAutoCalculation();
+      }
+    });
+
+    // 使用 input 事件以获得即时响应
+    flipHorizontal.addEventListener('input', () => {
+      updateCurrentSetting('flipHorizontal', flipHorizontal.checked);
+    });
+
+    flipVertical.addEventListener('input', () => {
+      updateCurrentSetting('flipVertical', flipVertical.checked);
+    });
+
+    borderEnabled.addEventListener('change', () => {
+      updateCurrentSetting('borderEnabled', borderEnabled.checked);
+      if (borderEnabled.checked) {
+        borderOptions.style.display = 'block';
+      } else {
+        borderOptions.style.display = 'none';
+      }
+    });
+
+    // Show preview indicator for visual feedback
+    function showPreviewIndicator() {
+      if (images.length > 0) {
+        previewIndicator.style.display = 'flex';
+        clearTimeout(window.previewTimer);
+        window.previewTimer = setTimeout(() => {
+          previewIndicator.style.display = 'none';
+        }, 2000);
+      }
+    }
+
+    // Add listeners to other inputs
+    ['borderWidth', 'borderColor', 'borderPadding', 'borderRadius', 'qualityInput', 
+     'watermarkText', 'watermarkSize', 'watermarkOpacity'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', (e) => {
+          const val = id === 'borderColor' || id === 'watermarkText' ? e.target.value : parseInt(e.target.value);
+          updateCurrentSetting(id, val);
+        });
+        el.addEventListener('change', (e) => {
+          const val = id === 'borderColor' || id === 'watermarkText' ? e.target.value : parseInt(e.target.value);
+          updateCurrentSetting(id, val);
+        });
+      }
+    });
+    
+    highQuality.addEventListener('change', () => {
+      updateCurrentSetting('highQuality', highQuality.checked);
+    });
+
+    // Upload handlers
+    uploadBtn.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('click', (e) => {
+      if (e.target === uploadArea || e.target.closest('.upload-area') === uploadArea && !e.target.closest('.upload-btn')) {
+        fileInput.click();
+      }
+    });
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.style.background = 'rgba(212, 175, 55, 0.08)';
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.style.background = 'transparent';
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.style.background = 'transparent';
+      handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+      fileInput.value = '';
+    });
+
+    function handleFiles(files) {
+      Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              // 避免重复添加（检查是否已经有相同的文件）
+              const existingImg = images.find(i => i.name === file.name && i.width === img.width && i.height === img.height);
+              if (existingImg) return;
+              
+              images.push({
+                id: Date.now() + Math.random(),
+                file: file,
+                preview: e.target.result,
+                width: img.width,
+                height: img.height,
+                name: file.name,
+                settings: createDefaultSettings(img.width, img.height)
+              });
+              renderPreview();
+              // Auto calculate height when first image is uploaded
+              if (images.length === 1 && autoHeight.checked) {
+                updateAutoCalculation();
+              }
+            };
+            img.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    function renderPreview() {
+      if (images.length === 0) {
+        uploadArea.style.display = 'block';
+        previewGrid.innerHTML = '';
+        return;
+      }
+
+      // Hide upload area when images are present
+      uploadArea.style.display = 'none';
+
+      previewGrid.innerHTML = images.map(img => {
+        const settings = getSettingsForImage(img);
+        const targetSize = calculateTargetSize(img.width, img.height, settings);
+        const imgId = String(img.id);
+        const isSelected = selectedImageIds.has(imgId);
+        
+        return `
+        <div class="preview-item ${isSelected ? 'selected' : ''}" data-id="${img.id}">
+          <div class="preview-image-container">
+            <img src="${img.preview}" alt="${img.name}" class="preview-main-image" data-width="${img.width}" data-height="${img.height}" data-id="${img.id}">
+          </div>
+          <div class="status-board">
+            <div class="status-line original">
+              <span class="status-icon">📄</span>
+              <span>原图尺寸：${img.width} × ${img.height} px</span>
+            </div>
+            <div class="status-line target">
+              <span class="status-icon">⚡</span>
+              <span>调整尺寸：<span class="target-width" data-img-id="${img.id}">${targetSize.width}</span> × <span class="target-height" data-img-id="${img.id}">${targetSize.height}</span> px</span>
+            </div>
+          </div>
+          <button class="remove-btn" onclick="event.stopPropagation(); removeImage('${img.id}')">✕</button>
+        </div>
+      `}).join('');
+      
+      // Apply flip transformations to preview images
+      updatePreviewFlips();
+      // 应用边框预览
+      updateBorderPreview();
+      // 应用水印预览
+      updateWatermarkPreview();
+      // 重新绑定点击事件
+      bindPreviewClickEvents();
+    }
+
+    function bindPreviewClickEvents() {
+      document.querySelectorAll('.preview-item').forEach(item => {
+        item.removeEventListener('click', previewClickHandler);
+        item.addEventListener('click', previewClickHandler);
+      });
+    }
+
+    function previewClickHandler(e) {
+      if (e.target.classList.contains('remove-btn')) return;
+      // 如果是真正的拖拽操作，不触发点击
+      if (isActualDrag) return;
+      
+      const id = String(this.dataset.id);
+      
+      if (e.shiftKey && lastSelectedId !== null) {
+        const lastId = String(lastSelectedId);
+        const startIdx = images.findIndex(img => String(img.id) === lastId);
+        const endIdx = images.findIndex(img => String(img.id) === id);
+        if (startIdx !== -1 && endIdx !== -1) {
+          const [from, to] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+          for (let i = from; i <= to; i++) {
+            selectedImageIds.add(String(images[i].id));
+          }
+        }
+      } else if (e.ctrlKey || e.metaKey) {
+        if (selectedImageIds.has(id)) {
+          selectedImageIds.delete(id);
+        } else {
+          selectedImageIds.add(id);
+        }
+      } else {
+        selectedImageIds.clear();
+        selectedImageIds.add(id);
+      }
+      
+      lastSelectedId = id;
+      updateSelectionUI();
+      syncUIWithSettings();
+      updateModeIndicator();
+      updatePreviewFlips();
+    }
+
+    function updateSelectionUI() {
+      document.querySelectorAll('.preview-item').forEach(item => {
+        const id = String(item.dataset.id);
+        if (selectedImageIds.has(id)) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+    }
+
+    function updatePreviewFlips() {
+      const previewImages = document.querySelectorAll('.preview-main-image');
+      previewImages.forEach(img => {
+        const imgId = img.dataset.id;
+        // 1. 找到对应的图片数据
+        const imgData = images.find(i => String(i.id) === String(imgId));
+        
+        if (!imgData) return;
+        
+        // 2. 只使用图片自己的 settings，绝不看其他任何设置
+        const settings = imgData.settings;
+        
+        // 3. 构建 transform
+        const rotation = parseInt(settings.rotationSelect) || 0;
+        let transform = '';
+        
+        if (rotation !== 0) {
+          transform += `rotate(${rotation}deg) `;
+        }
+        if (settings.flipHorizontal) {
+          transform += 'scaleX(-1) ';
+        }
+        if (settings.flipVertical) {
+          transform += 'scaleY(-1) ';
+        }
+        
+        // 4. 应用到当前这张图片
+        img.style.transform = transform.trim();
+      });
+    }
+
+    // 边框实时预览
+    function updateBorderPreview() {
+      const previewItems = document.querySelectorAll('.preview-item');
+      previewItems.forEach(item => {
+        const img = item.querySelector('.preview-main-image');
+        if (!img) return;
+        
+        const imgId = String(img.dataset.id);
+        const imgData = images.find(i => String(i.id) === imgId);
+        if (!imgData) return;
+        
+        const settings = imgData.settings;
+        const container = item.querySelector('.preview-image-container');
+        
+        // 清除之前的边框样式
+        container.style.border = 'none';
+        container.style.borderRadius = '0';
+        container.style.padding = '0';
+        
+        if (settings.borderEnabled) {
+          const borderColor = settings.borderColor;
+          const borderWidth = parseInt(settings.borderWidth);
+          const borderPadding = parseInt(settings.borderPadding);
+          const borderRadius = parseInt(settings.borderRadius);
+          
+          // 应用边框样式
+          if (borderWidth > 0) {
+            container.style.border = `${borderWidth}px solid ${borderColor}`;
+          }
+          container.style.padding = borderPadding + 'px';
+          container.style.borderRadius = borderRadius > 0 ? borderRadius + 'px' : '0';
+        }
+      });
+    }
+
+    // 水印实时预览
+    function updateWatermarkPreview() {
+      const previewItems = document.querySelectorAll('.preview-item');
+      previewItems.forEach(item => {
+        const img = item.querySelector('.preview-main-image');
+        if (!img) return;
+        
+        const imgId = String(img.dataset.id);
+        const imgData = images.find(i => String(i.id) === imgId);
+        if (!imgData) return;
+        
+        const settings = imgData.settings;
+        const container = item.querySelector('.preview-image-container');
+        
+        // 清除旧的水印预览
+        const oldWatermark = container.querySelector('.preview-watermark');
+        if (oldWatermark) {
+          oldWatermark.remove();
+        }
+        
+        // 显示水印（仅当有文字时）
+        if (settings.watermarkText && settings.watermarkText.trim()) {
+          const watermarkEl = document.createElement('div');
+          watermarkEl.className = 'preview-watermark';
+          
+          const fontSize = parseInt(settings.watermarkSize);
+          const opacity = parseInt(settings.watermarkOpacity);
+          
+          // 预览时缩放字体大小以适应小预览图
+          const scaleFactor = 0.4;
+          const scaledFontSize = Math.round(fontSize * scaleFactor);
+          
+          watermarkEl.style.fontSize = scaledFontSize + 'px';
+          watermarkEl.style.color = `rgba(212, 175, 55, ${opacity / 100})`;
+          watermarkEl.style.fontFamily = "'Noto Sans SC', sans-serif";
+          watermarkEl.textContent = settings.watermarkText;
+          
+          // 定位
+          switch (settings.watermarkPosition) {
+            case 'top-left':
+              watermarkEl.style.top = '10px';
+              watermarkEl.style.left = '10px';
+              watermarkEl.style.textAlign = 'left';
+              break;
+            case 'top-right':
+              watermarkEl.style.top = '10px';
+              watermarkEl.style.right = '10px';
+              watermarkEl.style.textAlign = 'right';
+              break;
+            case 'bottom-left':
+              watermarkEl.style.bottom = '10px';
+              watermarkEl.style.left = '10px';
+              watermarkEl.style.textAlign = 'left';
+              break;
+            case 'bottom-right':
+              watermarkEl.style.bottom = '10px';
+              watermarkEl.style.right = '10px';
+              watermarkEl.style.textAlign = 'right';
+              break;
+            default:
+              watermarkEl.style.top = '50%';
+              watermarkEl.style.left = '50%';
+              watermarkEl.style.transform = 'translate(-50%, -50%)';
+          }
+          
+          container.appendChild(watermarkEl);
+        }
+      });
+    }
+
+    function updateAllTargetSizes() {
+      const previewItems = document.querySelectorAll('.preview-item');
+      previewItems.forEach(item => {
+        const img = item.querySelector('.preview-main-image');
+        if (img) {
+          const imgId = String(img.dataset.id);
+          const imgData = images.find(i => String(i.id) === imgId);
+          if (!imgData) return;
+          
+          const originalWidth = parseInt(img.dataset.width);
+          const originalHeight = parseInt(img.dataset.height);
+          const settings = getSettingsForImage(imgData);
+          let targetSize = calculateTargetSize(originalWidth, originalHeight, settings);
+          
+          // 如果旋转了90或270度，预览中交换宽高显示
+          const rotation = parseInt(settings.rotationSelect);
+          if (rotation === 90 || rotation === 270) {
+            targetSize = { width: targetSize.height, height: targetSize.width };
+          }
+          
+          const targetWidthEl = item.querySelector(`.target-width[data-img-id="${img.dataset.id}"]`);
+          const targetHeightEl = item.querySelector(`.target-height[data-img-id="${img.dataset.id}"]`);
+          
+          if (targetWidthEl) targetWidthEl.textContent = targetSize.width;
+          if (targetHeightEl) targetHeightEl.textContent = targetSize.height;
+        }
+      });
+    }
+
+    function removeImage(id) {
+      const removeId = String(id);
+      images = images.filter(img => String(img.id) !== removeId);
+      if (selectedImageIds.has(removeId)) {
+        selectedImageIds.delete(removeId);
+      }
+      if (String(lastSelectedId) === removeId) {
+        lastSelectedId = images.length > 0 ? images[0].id : null;
+      }
+      updateModeIndicator();
+      syncUIWithSettings();
+      renderPreview();
+      if (images.length === 0) {
+        uploadArea.style.display = 'block';
+      }
+    }
+
+    function calculateTargetSize(originalWidth, originalHeight, settings = null) {
+      if (!settings) settings = getCurrentSettings();
+      
+      let targetWidth = parseInt(settings.width);
+      let targetHeight = parseInt(settings.height);
+      
+      const selectedRatio = settings.ratioSelect;
+      
+      if (selectedRatio !== 'custom') {
+        const ratio = ratioPresets[selectedRatio];
+        if (!settings.autoWidth && !settings.autoHeight) {
+          return { width: targetWidth, height: Math.round(targetWidth / ratio) };
+        } else if (settings.autoWidth) {
+          return { width: Math.round(targetHeight * ratio), height: targetHeight };
+        } else {
+          return { width: targetWidth, height: Math.round(targetWidth / ratio) };
+        }
+      }
+      
+      const ratio = originalWidth / originalHeight;
+
+      if (settings.autoWidth && settings.autoHeight) {
+        return { width: originalWidth, height: originalHeight };
+      } else if (settings.autoWidth) {
+        return { width: Math.round(targetHeight * ratio), height: targetHeight };
+      } else if (settings.autoHeight) {
+        return { width: targetWidth, height: Math.round(targetWidth / ratio) };
+      } else {
+        return { width: targetWidth, height: targetHeight };
+      }
+    }
+
+    async function processImage(imgData, index) {
+      return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        const settings = getSettingsForImage(imgData);
+
+        img.onload = () => {
+          let { width, height } = calculateTargetSize(imgData.width, imgData.height, settings);
+          const rotation = parseInt(settings.rotationSelect);
+          
+          // 旋转后交换宽高
+          let finalWidth = width;
+          let finalHeight = height;
+          if (rotation === 90 || rotation === 270) {
+            finalWidth = height;
+            finalHeight = width;
+          }
+
+          const borderW = settings.borderEnabled ? parseInt(settings.borderWidth) : 0;
+          const padding = settings.borderEnabled ? parseInt(settings.borderPadding) : 0;
+          const radius = settings.borderEnabled ? parseInt(settings.borderRadius) : 0;
+          
+          const canvasWidth = finalWidth + (borderW + padding) * 2;
+          const canvasHeight = finalHeight + (borderW + padding) * 2;
+          canvas.width = canvasWidth;
+          canvas.height = canvasHeight;
+
+          ctx.save();
+          ctx.translate(canvasWidth / 2, canvasHeight / 2);
+          
+          if (rotation !== 0) {
+            ctx.rotate((rotation * Math.PI) / 180);
+          }
+          
+          // 翻转（在旋转之后应用）
+          if (settings.flipHorizontal) {
+            ctx.scale(-1, 1);
+          }
+          if (settings.flipVertical) {
+            ctx.scale(1, -1);
+          }
+          
+          // Draw border with rounded corners
+          if (settings.borderEnabled && borderW > 0) {
+            ctx.fillStyle = settings.borderColor;
+            const contentWidth = finalWidth + (borderW + padding) * 2;
+            const contentHeight = finalHeight + (borderW + padding) * 2;
+            const contentX = -contentWidth / 2;
+            const contentY = -contentHeight / 2;
+            
+            if (radius > 0) {
+              ctx.beginPath();
+              ctx.roundRect(contentX, contentY, contentWidth, contentHeight, radius);
+              ctx.fill();
+            } else {
+              ctx.fillRect(contentX, contentY, contentWidth, contentHeight);
+            }
+          }
+
+          // Draw image with padding
+          const imageX = -(finalWidth / 2) - padding;
+          const imageY = -(finalHeight / 2) - padding;
+          ctx.drawImage(img, imageX, imageY, finalWidth, finalHeight);
+
+          // 水印（在边框和图片之上）
+          if (settings.watermarkText && settings.watermarkText.trim()) {
+            ctx.restore();
+            ctx.save();
+            
+            const fontSize = parseInt(settings.watermarkSize);
+            const opacity = parseInt(settings.watermarkOpacity) / 100;
+            ctx.font = `${fontSize}px 'Noto Sans SC', sans-serif`;
+            ctx.fillStyle = `rgba(212, 175, 55, ${opacity})`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const text = settings.watermarkText;
+            let x, y;
+            const textPadding = fontSize;
+            const totalBorder = borderW + padding;
+            
+            switch (settings.watermarkPosition) {
+              case 'top-left':
+                x = textPadding + totalBorder;
+                y = textPadding + totalBorder;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                break;
+              case 'top-right':
+                x = canvasWidth - textPadding - totalBorder;
+                y = textPadding + totalBorder;
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'top';
+                break;
+              case 'bottom-left':
+                x = textPadding + totalBorder;
+                y = canvasHeight - textPadding - totalBorder;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'bottom';
+                break;
+              case 'bottom-right':
+                x = canvasWidth - textPadding - totalBorder;
+                y = canvasHeight - textPadding - totalBorder;
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'bottom';
+                break;
+              default:
+                x = canvasWidth / 2;
+                y = canvasHeight / 2;
+            }
+            
+            ctx.fillText(text, x, y);
+          }
+
+          ctx.restore();
+
+          const format = settings.formatSelect;
+          const quality = parseInt(settings.qualityInput) / 100;
+          const mimeType = format === 'jpeg' ? 'image/jpeg' : format === 'png' ? 'image/png' : 'image/webp';
+
+          canvas.toBlob((blob) => {
+            let fileName = imgData.name;
+            const prefix = filePrefix.value;
+            const startNum = parseInt(startNumber.value);
+            
+            if (prefix) {
+              const ext = format;
+              fileName = `${prefix}${startNum + index}.${ext}`;
+            } else {
+              const baseName = imgData.name.replace(/\.[^/.]+$/, '');
+              fileName = `${baseName}.${format}`;
+            }
+
+            resolve({ blob, name: fileName });
+          }, mimeType, quality);
+        };
+
+        img.src = imgData.preview;
+      });
+    }
+
+    downloadZip.addEventListener('click', async () => {
+      if (images.length === 0) return;
+
+      const zip = new JSZip();
+
+      for (let i = 0; i < images.length; i++) {
+        const { blob, name } = await processImage(images[i], i);
+        zip.file(name, blob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'processed_images.zip';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    downloadFiles.addEventListener('click', async () => {
+      for (let i = 0; i < images.length; i++) {
+        const { blob, name } = await processImage(images[i], i);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(url);
+        await new Promise(r => setTimeout(r, 300));
+      }
+    });
+
+    document.getElementById('saveToFolder').addEventListener('click', () => {
+      alert('此功能需要浏览器支持 File System Access API，请使用 "下载 ZIP" 或 "下载文件" 代替。');
+    });
+
+    clearAll.addEventListener('click', () => {
+      if (confirm('确定要清除全部图片吗？')) {
+        images = [];
+        selectedImageIds.clear();
+        renderPreview();
+        uploadArea.style.display = 'block';
+        updateModeIndicator();
+      }
+    });
+
+    resetSettings.addEventListener('click', () => {
+      // Reset global settings
+      Object.keys(globalSettings).forEach(key => {
+        globalSettings[key] = (key === 'width') ? 1200 :
+                              (key === 'height') ? 800 :
+                              (key === 'autoWidth') ? false :
+                              (key === 'autoHeight') ? true :
+                              (key === 'ratioSelect') ? 'custom' :
+                              (key === 'rotationSelect') ? '0' :
+                              (key === 'flipHorizontal') ? false :
+                              (key === 'flipVertical') ? false :
+                              (key === 'borderEnabled') ? false :
+                              (key === 'borderWidth') ? 20 :
+                              (key === 'borderColor') ? '#d4af37' :
+                              (key === 'borderPadding') ? 0 :
+                              (key === 'borderRadius') ? 0 :
+                              (key === 'formatSelect') ? 'jpeg' :
+                              (key === 'qualityInput') ? 90 :
+                              (key === 'highQuality') ? false :
+                              (key === 'watermarkText') ? '' :
+                              (key === 'watermarkSize') ? 48 :
+                              (key === 'watermarkOpacity') ? 30 :
+                              (key === 'watermarkPosition') ? 'center' :
+                              globalSettings[key];
+      });
+      
+      // Reset all individual image settings too
+      images.forEach(img => {
+        img.settings = createDefaultSettings(img.width, img.height);
+      });
+      
+      // Sync UI
+      syncUIWithSettings();
+      
+      // Reset other inputs
+      filePrefix.value = '';
+      startNumber.value = 1;
+    });
+    
+    // ==================== 拖拽框选核心逻辑 ====================
+    
+    document.addEventListener('mousedown', function(e) {
+      // 只在空白区域开始
+      if (e.target.closest('button') || 
+          e.target.closest('input') || 
+          e.target.closest('.custom-select') ||
+          e.target.closest('.nav-btn') ||
+          e.target.closest('.action-btn')) return;
+      
+      // 只有在主区域才开始
+      if (!e.target.closest('.main-area')) return;
+      
+      dragActive = true;
+      isActualDrag = false;
+      dragX = e.clientX;
+      dragY = e.clientY;
+      
+      // 创建框选盒子
+      dragSelection = document.createElement('div');
+      dragSelection.className = 'drag-select-box';
+      dragSelection.style.cssText = 'position: fixed; left: ' + dragX + 'px; top: ' + dragY + 'px; width: 0; height: 0;';
+      document.body.appendChild(dragSelection);
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+      if (!dragActive || !dragSelection) return;
+      
+      const left = Math.min(dragX, e.clientX);
+      const top = Math.min(dragY, e.clientY);
+      const width = Math.abs(e.clientX - dragX);
+      const height = Math.abs(e.clientY - dragY);
+      
+      dragSelection.style.left = left + 'px';
+      dragSelection.style.top = top + 'px';
+      dragSelection.style.width = width + 'px';
+      dragSelection.style.height = height + 'px';
+      
+      // 如果移动距离超过阈值，标记为真正的拖拽
+      if (width > 5 || height > 5) {
+        isActualDrag = true;
+      }
+      
+      // 更新选择
+      if (width > 10 || height > 10) {
+        updateDragSelect(left, top, width, height);
+      }
+    });
+    
+    document.addEventListener('mouseup', function(e) {
+      if (!dragActive) return;
+      dragActive = false;
+      
+      // 移除框选盒子
+      if (dragSelection && dragSelection.parentNode) {
+        dragSelection.parentNode.removeChild(dragSelection);
+      }
+      dragSelection = null;
+      
+      // 同步 UI
+      updateModeIndicator();
+      syncUIWithSettings();
+    });
+    
+    function updateDragSelect(boxL, boxT, boxW, boxH) {
+      const items = document.querySelectorAll('.preview-item');
+      
+      items.forEach(function(item) {
+        const rect = item.getBoundingClientRect();
+        const itemId = String(item.dataset.id);
+        
+        // 检查碰撞：有重叠才选中
+        const hit = (
+          boxL < rect.right &&
+          boxL + boxW > rect.left &&
+          boxT < rect.bottom &&
+          boxT + boxH > rect.top
+        );
+        
+        if (hit) {
+          selectedImageIds.add(itemId);
+          item.classList.add('selected');
+        } else {
+          selectedImageIds.delete(itemId);
+          item.classList.remove('selected');
+        }
+      });
+      
+      // 更新网格状态
+      if (selectedImageIds.size > 0) {
+        previewGrid.classList.add('preview-grid-has-selection');
+      } else {
+        previewGrid.classList.remove('preview-grid-has-selection');
+      }
+    }
+    
+    // 点击空白区域取消选中
+    document.querySelector('.main-area').addEventListener('click', (e) => {
+      if (selectedImageIds.size > 0 && e.target.closest('.preview-item') === null && !isActualDrag) {
+        selectedImageIds.clear();
+        updateModeIndicator();
+        updateSelectionUI();
+        syncUIWithSettings();
+      }
+    });
+  </script>
+</body>
+</html>
